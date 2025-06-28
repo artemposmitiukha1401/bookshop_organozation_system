@@ -1,0 +1,431 @@
+Завдання: Реалізувати програму для управління інформацією про книги в книгарні з
+використанням динамічного масиву. Кожен елемент масиву містить: назву магазину, ПІБ
+директора, номер книги, автора, назву, видавництво, вартість.
+Програма повинна забезпечувати:
+• Додавання нового запису про книгу до динамічного масиву.
+• Видалення запису про книгу з динамічного масиву.
+• Редагування даних про книги.
+• Виведення всіх даних у вигляді таблиці.
+• Пошук книг із вартістю в заданому діапазоні.
+• Виведення інформації про книги, що продаються в заданому магазині.
+• Сортування масиву за вартістю книг.
+
+
+
+    // Book book_1;
+    // FillBookInfo(book_1, "KCD", "Dune", "Frank Herbert", 654);
+    // Book book_2;
+    // FillBookInfo(book_2, "KCD", "Children Of Dune", "Frank Herbert", 623);
+    // Book book_3;
+    // FillBookInfo(book_3, "KCD", "Game Of Thrones", "George Martin", 234);
+    // Book book_4;
+    // FillBookInfo(book_4, "KCD", "Hunger Games", "Artem Posmitiukha", 324);
+    //
+    // BookShop book_shop = CreateBookShop("IT STEP", "Keba Evhenii");
+    // AddBookToLibrary(book_1, book_shop);
+    // AddBookToLibrary(book_2, book_shop);
+    // AddBookToLibrary(book_3, book_shop);
+    // AddBookToLibrary(book_4, book_shop);
+    //
+    // PrintLibrary(book_shop);
+
+    // cout << book.author << endl;
+    // cout << book.price << endl;
+    // cout << book.id << endl;
+    // ChangeBookData(book, AUTHOR, "Artem Posmitiukha");
+    // ChangeBookData(book, PRICE, 345);
+    // cout << book.author << endl;
+    // cout << book.price << endl;
+    // cout << book_shop.books_list[0].title << endl;
+    // Book* books_list = SearchInPriceRange(book_shop, 3, 400);
+    // cout << books_list[0].id << endl;
+
+
+
+    #include <iomanip>
+    #include <iostream>
+    using namespace std;
+
+    enum BookDataSelector{
+        PUBLISHING,
+        TITLE,
+        AUTHOR,
+        PRICE
+    };
+
+    struct Book {
+        char* id;
+        int id_size = 0;
+        char* publishing = nullptr;
+        int publishing_size = 0;
+        char* title = nullptr;
+        int title_size = 0;
+        char* author = nullptr;
+        int author_size = 0;
+        int price;
+    };
+    struct BookShop {
+        char* name = nullptr;
+        int name_size = 0;
+        char* director = nullptr;
+        int director_size = 0;
+        Book* books_list = nullptr;
+        int books_list_size = 0;
+        int position = 0;
+    };
+
+    #pragma region ServiceFunctions_Book
+    void FillBookInfo(Book& book, const char* publishing, const char* title, const char* author, int price);
+    void CleanUpBook(Book& book);
+    void ChangeBookData(Book& book, const BookDataSelector field_selector, const char* new_value);
+    void ChangeBookData(Book& book, const BookDataSelector field_selector, const int new_value);
+    #pragma endregion
+
+    #pragma region ServiceFunctions_BookShop
+    BookShop CreateBookShop(const char* name, const char* director);
+    void CreateBookShop(BookShop& book_shop, const char* name, char* director);
+    void CleanUpBookShop(BookShop& book_shop);
+    void AddBookToLibrary(const Book& book, BookShop& book_shop);
+    void SortLibrary(BookShop& book_shop);
+    Book* SearchInPriceRange(const BookShop& book_shop, const int min_price, const int max_price);
+    int CountBooksInLibrary(BookShop& book_shop);
+    #pragma endregion
+
+    #pragma region ServiceFunctions
+    char* GenerateID();
+    void ChoiceHandler(char& choice);
+    #pragma endregion
+
+    #pragma region InterfaceFunctions
+    void PrintLibrary(BookShop& book_shop);
+    void PrintMenu();
+    void CreateLibrary();
+    void CreateBook();
+    void AddBookToTheLibrary();
+    void DeleteBookFromTheLibrary();
+    void RewriteBookInfo();
+    void ListBooks();
+    #pragma endregion
+
+    int main() {
+        srand(time(nullptr));
+        CreateLibrary();
+
+    }
+
+    #pragma region BookFunctions
+    void FillBookInfo(Book& book, const char* publishing, const char* title, const char* author, int price) {
+        if (strlen(publishing) <= 2 || strlen(title) <= 2 || strlen(author) <= 2 || price == 0) {
+            cout << "Invalid book info\n";
+            return;
+        }
+
+        if (book.title != nullptr && book.publishing != nullptr && book.author != nullptr) {
+            CleanUpBook(book);
+        }
+            char* id = GenerateID();
+            book.id_size = strlen(id);
+            book.id = new char[book.id_size + + 1];
+            strcpy(book.id, id);
+
+            book.publishing_size = strlen(publishing);
+            book.publishing = new char[book.publishing_size + 1];
+            strcpy(book.publishing, publishing);
+
+            book.title_size = strlen(title);
+            book.title = new char[book.title_size + 1];
+            strcpy(book.title, title);
+
+            book.author_size = strlen(author);
+            book.author = new char[book.author_size + 1];
+            strcpy(book.author, author);
+
+            book.price = price;
+    }
+    void CleanUpBook(Book& book) {
+        if (book.title != nullptr) {
+            delete[] book.title;
+            book.title = nullptr;
+            book.title_size = 0;
+        }
+        if (book.author != nullptr) {
+            delete[] book.author;
+            book.author = nullptr;
+            book.author_size = 0;
+        }
+        if (book.publishing != nullptr) {
+            delete[] book.publishing;
+            book.publishing = nullptr;
+            book.publishing_size = 0;
+        }
+        if (book.id != nullptr) {
+            delete[] book.id;
+            book.id = nullptr;
+            book.id_size = 0;
+        }
+
+        book.price = 0;
+    }
+    void ChangeBookData(Book& book, const BookDataSelector field_selector, const char* new_value) {
+        if (new_value == nullptr) {
+            cout << "Invalid new value\n";
+            return;
+        }
+
+        char** selected_field = nullptr;
+        int* selected_field_size = nullptr;
+        switch (field_selector) {
+            case PUBLISHING:
+                selected_field = &book.publishing;
+            selected_field_size = &book.publishing_size;
+            break;
+            case TITLE:
+                selected_field = &book.title;
+            selected_field_size = &book.title_size;
+            break;
+            case AUTHOR:
+                selected_field = &book.author;
+            selected_field_size = &book.author_size;
+            break;
+            default:
+                cout << "Invalid field selected\n";
+                return;
+        }
+
+        delete[] *selected_field;
+
+        int new_size = strlen(new_value);
+        *selected_field = new char[new_size + 1];
+        strcpy(*selected_field, new_value);
+
+        *selected_field_size = new_size;
+    }
+    void ChangeBookData(Book& book, const BookDataSelector field_selector, const int new_value) {
+        int* selected_field = nullptr;
+        switch (field_selector) {
+           case PRICE:
+               selected_field = &book.price;
+                break;
+           default:
+               cout << "Invalid field selected\n";
+                return;
+       }
+        *selected_field = new_value;
+    }
+    #pragma endregion
+
+    #pragma region BookShopFunctions
+    Book* SearchInPriceRange(const BookShop& book_shop, const int min, const int max) {
+        int result_count = 0;
+        for (int i = 0; i < book_shop.books_list_size; i++) {
+            if (book_shop.books_list[i].price >= min && book_shop.books_list[i].price <= max) {
+                result_count++;
+            }
+        }
+
+        if (result_count == 0) {
+            return nullptr;
+        }
+
+        Book* available_books = new Book[result_count];
+
+        int index = 0;
+        for (int i = 0; i < book_shop.books_list_size; i++) {
+            if (book_shop.books_list[i].price >= min && book_shop.books_list[i].price <= max) {
+                available_books[index++] = book_shop.books_list[i];
+            }
+        }
+        return available_books;
+    }
+
+    void AddBookToLibrary(const Book& book, BookShop& book_shop) {
+        if (book_shop.books_list == nullptr) {
+            book_shop.books_list_size = 4;
+            book_shop.books_list = new Book[book_shop.books_list_size];
+            book_shop.position = 0;
+        }
+        else if (book_shop.position >= book_shop.books_list_size) {
+            Book* temporary_book = new Book[book_shop.books_list_size * 2];
+
+            for (int i = 0; i < book_shop.books_list_size; i++) {
+                temporary_book[i] = book_shop.books_list[i];
+            }
+            delete[] book_shop.books_list;
+            book_shop.books_list = temporary_book;
+            book_shop.books_list_size *= 2;
+        }
+        book_shop.books_list[book_shop.position++] = book;
+    }
+
+    BookShop CreateBookShop(const char* name, const char* director) {
+        BookShop book_shop = {};
+
+        if (strlen(name) <= 2 || strlen(director) <= 2) {
+            cout << "Invalid book shop info\n";
+            return book_shop;
+        }
+
+        book_shop.name_size = strlen(name);
+        book_shop.name = new char[book_shop.name_size + 1];
+        strcpy(book_shop.name, name);
+
+        book_shop.director_size = strlen(director);
+        book_shop.director = new char[book_shop.director_size + 1];
+        strcpy(book_shop.director, director);
+    }
+    void CreateBookShop(BookShop& book_shop, const char* name, char* director) {
+        if (strlen(name) <= 2 || strlen(director) <= 2) {
+            cout << "Invalid book shop info\n";
+            return;
+        }
+        if (book_shop.director != nullptr && book_shop.name != nullptr) {
+            CleanUpBookShop(book_shop);
+            book_shop.name_size = strlen(name);
+            book_shop.name = new char[book_shop.name_size + 1];
+            strcpy(book_shop.name, name);
+
+            book_shop.director_size = strlen(director);
+            book_shop.director = new char[book_shop.director_size + 1];
+            strcpy(book_shop.director, director);
+
+            book_shop.books_list = nullptr;
+
+        }
+    }
+    void CleanUpBookShop(BookShop& book_shop) {
+        if (book_shop.director != nullptr) {
+            delete[] book_shop.director;
+            book_shop.director = nullptr;
+            book_shop.director_size = 0;
+        }
+        if (book_shop.name != nullptr) {
+            delete[] book_shop.name;
+            book_shop.name = nullptr;
+            book_shop.name_size = 0;
+        }
+        if (book_shop.books_list != nullptr) {
+            delete[] book_shop.books_list;
+            book_shop.books_list = nullptr;
+            book_shop.books_list_size = 0;
+        }
+    }
+    void SortLibrary(BookShop& book_shop) {
+        if (book_shop.books_list == nullptr || book_shop.books_list_size <= 1) { return; }
+
+        Book* library = book_shop.books_list;
+        int size = book_shop.books_list_size;
+
+        for (int i = 0; i < size - 1; i++) {
+            for (int j = 0; j < size - i - 1; j++) {
+                if (library[j].price > library[j + 1].price) {
+                    Book temp = library[j];
+                    library[j] = library[j + 1];
+                    library[j + 1] = temp;
+                }
+            }
+        }
+    }
+    int CountBooksInLibrary(BookShop& book_shop) {
+        int books_count = 0;
+        for (int i = 0; i < book_shop.books_list_size; i++) {
+            books_count++;
+        }
+        return books_count;
+    }
+    #pragma endregion
+
+    #pragma region ServiceFunctions
+
+
+    char* GenerateID() {
+        const int length = 10;
+        const char charset[] =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
+            "0123456789";
+        const int charsetSize = sizeof(charset) - 1;
+
+        char array[length + 1];
+
+        for (int i = 0; i < length; ++i) {
+            array[i] = charset[rand() % charsetSize];
+        }
+        array[length] = '\0';
+
+        return array;
+    }
+
+    #pragma endregion
+
+    #pragma region InterfaceFunctions
+    void PrintLibrary(BookShop &book_shop) {
+        cout << endl << book_shop.name << " | " << book_shop.director << endl;
+        cout << string(95, '-') << "\n";
+        cout << left
+             << setw(15) << "ID"
+             << "| " << setw(12) << "PUBLISHER"
+             << "| " << setw(25) << "TITLE"
+             << "| " << setw(20) << "AUTHOR"
+             << "| " << setw(11) << "PRICE (UAH)"
+             << "|\n";
+
+        cout << string(95, '-') << "\n";
+
+        for (int i = 0; i < book_shop.books_list_size; i++) {
+            cout << left
+                 << setw(15) << book_shop.books_list[i].id
+                 << "| " << setw(12) << book_shop.books_list[i].publishing
+                 << "| " << setw(25) << book_shop.books_list[i].title
+                 << "| " << setw(20) << book_shop.books_list[i].author
+                 << "| " << setw(11) << book_shop.books_list[i].price
+                 << "|\n";
+        }
+        cout << string(95, '-') << "\n";
+    }
+    void PrintMenu() {
+        cout << "1 - Create libray;\n" <<
+                    "2 - Create book;\n" <<
+                        "3 - Add book to the library;\n" <<
+                            "4 - Delete book from the library;\n" <<
+                                "5 - Rewrite book info;\n" <<
+                                    "6 - List books from the library;\n" <<
+                                        "Enter preferred action _";
+    }
+
+    // BookShop* CreateLibrary() {
+    //     char name[256];
+    //     char director[256];
+    //
+    //     cout << "Enter bookshop name: ";
+    //     cin.getline(name, sizeof(name));
+    //
+    //     cout << "Enter director name: ";
+    //     cin.getline(director, sizeof(director));
+    //
+    //     if (strlen(name) <= 2) {
+    //         cout << "Error: Bookshop name must be longer than 2 characters!\n";
+    //         return nullptr;
+    //     }
+    //
+    //     if (strlen(director) <= 2) {
+    //         cout << "Error: Director name must be longer than 2 characters!\n";
+    //         return nullptr;
+    //     }
+    //
+    //     BookShop* book_shop;
+    //     CreateBookShop(*book_shop ,name, director);
+    //
+    //     if (book_shop.name != nullptr && book_shop->director != nullptr) {
+    //         cout << "Bookshop '" << book_shop->name << "  created successfully\n";
+    //         cout << "Director: " << book_shop->director << "\n";
+    //         return book_shop;
+    //     } else {
+    //         cout << "Error: Invalid input";
+    //         delete book_shop;
+    //         return nullptr;
+    //     }
+    //
+    // }
+
+
+    #pragma endregion
